@@ -17,11 +17,13 @@ namespace :redmine_s3 do
       source   = data[:source]
       target   = data[:target]
       filename = data[:filename]
-      object = objects[RedmineS3::Connection.folder + target]
+      object = objects.detect do |o|
+        o.key == RedmineS3::Connection.folder + target
+      end
       return if target.nil?
       # get the file modified time, which will stay nil if the file doesn't exist yet
       # we could check if the file exists, but this saves a head request
-      s3_mtime = object.last_modified rescue nil 
+      s3_mtime = object.last_modified rescue nil
 
       # put it on s3 if the file has been updated or it doesn't exist on s3 yet
       if s3_mtime.nil? || s3_mtime < File.mtime(source)
@@ -49,8 +51,8 @@ namespace :redmine_s3 do
     end
 
     # init the connection, and grab the ObjectCollection object for the bucket
-    conn = RedmineS3::Connection.establish_connection
-    objects = conn.buckets[RedmineS3::Connection.bucket].objects
+    #conn = RedmineS3::Connection.establish_connection
+    objects = RedmineS3::Connection.bucket.objects
 
     # create some threads to start syncing all of the queued files with s3
     threads = Array.new
